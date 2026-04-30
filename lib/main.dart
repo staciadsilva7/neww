@@ -1,27 +1,28 @@
-// Padding — adds space around widgets
-// Column — stacks widgets vertically
-// Card — a nice container with a shadow
-// TextField — text input field
-// ElevatedButton — clickable button (button does nothing yet — that's okay!)
-// SizedBox — adds empty space between widgets
-
+// Why we change from StatelessWidget to StatefulWidget
+// List<Map<String, String>> — storing products as a list
+// TextEditingController — reading what user typed
+// setState() — the magic that redraws the screen
+// ListView.builder — drawing one row per product
+// The ternary operator condition ? a : b — show empty state or the list
 
 import 'package:flutter/material.dart';
 
+// Entry point (unchanged)
 void main() {
   runApp(const MyApp());
 }
 
+// Root app (unchanged)
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Customer Information',
+      title: 'Product Inventory',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const InventoryPage(),
@@ -29,8 +30,57 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class InventoryPage extends StatelessWidget {
+// ───────────────────────────────────────────────────────────────
+// NEW: Converted from StatelessWidget → StatefulWidget
+// WHY: because UI now depends on changing data (products list)
+// ───────────────────────────────────────────────────────────────
+class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
+
+  @override
+  State<InventoryPage> createState() => _InventoryPageState();
+}
+
+// State class holds mutable data + logic
+class _InventoryPageState extends State<InventoryPage> {
+
+  // NEW: In-memory data store (very basic)
+  // List of Map instead of proper model → OK for demo, not production
+  List<Map<String, String>> products = [];
+
+  // NEW: Controllers to read user input from TextFields
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController quantityController = TextEditingController();
+
+  // NEW: Business logic → Add product
+  void addProduct() {
+
+    // Read and clean user input
+    String name = nameController.text.trim();
+    String quantity = quantityController.text.trim();
+
+    // Guard clause → prevent invalid input
+    if (name.isEmpty || quantity.isEmpty) return;
+
+    // CRITICAL: setState triggers UI rebuild
+    setState(() {
+      products.add({
+        'name': name,
+        'quantity': quantity,
+      });
+    });
+
+    // Reset input fields after action
+    nameController.clear();
+    quantityController.clear();
+  }
+
+  // NEW: Business logic → Remove product
+  void removeProduct(int index) {
+    setState(() {
+      products.removeAt(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,99 +88,82 @@ class InventoryPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text(
-          'Customer Information',
+          'Product Inventory',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
+
       body: Padding(
-        // Adds space (16px) around the entire body content
         padding: const EdgeInsets.all(16.0),
 
         child: Column(
-          // Column arranges widgets vertically (top → bottom)
           children: [
 
-            // ── The input card ───────────────────────────────────────
+            // ── Input card (mostly same, but now CONNECTED) ──────────
             Card(
-              // elevation adds a shadow → gives a "raised" card effect
               elevation: 3,
-
               child: Padding(
-                // inner spacing inside the card
                 padding: const EdgeInsets.all(16.0),
 
                 child: Column(
-                  // aligns children to the left instead of center
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     const Text(
-                      'Add New Customer',
+                      'Add New Product',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    // Adds vertical spacing between elements
                     const SizedBox(height: 12),
 
-                    // Product name field
-                    const TextField(
-                      // InputDecoration defines UI of the input field
-                      decoration: InputDecoration(
-                        labelText: 'Customer Name',   // floating label
-                        hintText: 'e.g. Stacy',     // placeholder text
-                        border: OutlineInputBorder(), // visible border
-                        prefixIcon: Icon(Icons.inventory_2), // icon inside field
+                    // NEW: connected to controller
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Product Name',
+                        hintText: 'e.g. Laptop',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.inventory_2),
                       ),
                     ),
 
                     const SizedBox(height: 12),
 
-                    // Quantity field
-                    const TextField(
-                      // Forces numeric keyboard on mobile
+                    // NEW: connected + numeric keyboard
+                    TextField(
+                      controller: quantityController,
                       keyboardType: TextInputType.number,
-
-                      decoration: InputDecoration(
-                        labelText: 'Customer Number',
-                        hintText: 'e.g. 90999910533',
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        hintText: 'e.g. 10',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.numbers),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Add button — does nothing yet
                     SizedBox(
-                      // Makes button take full width
                       width: double.infinity,
 
                       child: ElevatedButton.icon(
-                        // Click handler (currently empty → no logic yet)
-                        onPressed: () {},
+                        // NEW: wired to logic
+                        onPressed: addProduct,
 
-                        // Icon + text button (combined)
                         icon: const Icon(Icons.add),
-
                         label: const Text(
-                          'Add Details',
-                          style: TextStyle(fontSize: 35),
+                          'Add Product',
+                          style: TextStyle(fontSize: 16),
                         ),
 
-                        // Custom styling for the button
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-
-                          // Uses theme color (keeps design consistent)
                           backgroundColor:
                               Theme.of(context).colorScheme.primary,
-
-                          // Text/icon color
-                          foregroundColor: Colors.red,
+                          foregroundColor: Colors.white,
                         ),
                       ),
                     ),
@@ -139,13 +172,117 @@ class InventoryPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 16),
 
-            // Placeholder text for future feature (product list)
-            const Text(
-              'Customer Details will appear here...',
-              style: TextStyle(color: Colors.purple, fontSize: 25),
-           ),
+            // ── NEW: Dynamic product count ───────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Products in Stock',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                // Chip shows live count
+                Chip(
+                  label: Text('${products.length} items'),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // ── NEW: Dynamic list rendering ──────────────────────────
+            Expanded(
+              // IMPORTANT: Expanded allows ListView to take remaining space
+              child: products.isEmpty
+
+                  // EMPTY STATE UI (good UX practice)
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inbox,
+                              size: 64, color: Colors.grey),
+                          SizedBox(height: 12),
+                          Text(
+                            'No products yet.\nAdd your first product above!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+
+                  // LIST STATE
+                  : ListView.builder(
+                      // Efficient rendering (lazy loading)
+                      itemCount: products.length,
+
+                      itemBuilder: (context, index) {
+
+                        // Access current item
+                        final product = products[index];
+
+                        return Card(
+                          margin:
+                              const EdgeInsets.only(bottom: 8),
+
+                          child: ListTile(
+                            // LEFT: index badge
+                            leading: CircleAvatar(
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+
+                              child: Text(
+                                '${index + 1}',
+
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            // MAIN CONTENT
+                            title: Text(
+                              product['name']!,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            subtitle: Text(
+                              'Quantity: ${product['quantity']}',
+                            ),
+
+                            // RIGHT: delete button
+                            trailing: IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+
+                              // NEW: remove logic connected
+                              onPressed: () =>
+                                  removeProduct(index),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
